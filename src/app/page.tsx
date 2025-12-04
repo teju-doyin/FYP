@@ -1,10 +1,17 @@
 'use client'
-import { toast } from "@/lib/toast"
+import Feedback from "@/shared/components/HomePage/Feedback"
+// import { toast } from "@/lib/toast"
+import HomeHeader from "@/shared/components/HomePage/HomeHeader"
+import Overview from "@/shared/components/HomePage/Overview"
+import Tasks from "@/shared/components/HomePage/Tasks"
 
 const Home = () => {
   return (
-    <div className="h-svh w-screen flex items-center justify-center">
-      <button className="bg-red-400 rounded-xl w-30 h-13" onClick={() => toast.warning("hiiii")}>Click me</button>
+    <div className="w-[95%] mx-auto -z-10 ">
+      <HomeHeader/>
+      <Overview/>
+      <Tasks/>
+      <Feedback/>
     </div>
   )
 }

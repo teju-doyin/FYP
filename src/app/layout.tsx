@@ -1,18 +1,23 @@
 'use client'
-import { Geist, Geist_Mono } from "next/font/google";
+import { Noto_Sans, Nunito } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/shared/providers/QueryProvider";
 import ToastProvider from "@/shared/providers/ToastProvider";
 import { useErrorStore } from "@/shared/stores/error.store";
 import BlockerPage from "@/shared/components/BlockerPage";
+import Navbar from "@/shared/components/Navbar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// const geistSans = Geist({
+//   variable: "--font-geist-sans",
+//   subsets: ["latin"],
+// });
+
+const notoSans = Noto_Sans({
+  variable: "--font-noto-sans",
   subsets: ["latin"],
 });
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const nunito = Nunito({
+  variable: "--font-nunito",
   subsets: ["latin"],
 });
 
@@ -23,9 +28,9 @@ export default function RootLayout({
 }>) {
     const hasCriticalError = useErrorStore((state) => state.hasCriticalError);
   return (
-    <html lang="en">
+    <html lang="en" className={`${notoSans.variable} ${nunito.variable}`}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={` antialiased bg-[#F9F9FC]`}
       >
         <QueryProvider>
           <ToastProvider
@@ -37,7 +42,10 @@ export default function RootLayout({
                         {hasCriticalError ? (
               <BlockerPage /> // Render blocker page if a critical error exists
             ) : (
-              children // Otherwise, render the regular application content
+              <div className="font-noto-sans">
+                <main>{children} </main>
+                <Navbar />                    
+              </div>
             )}
           </ToastProvider>
         </QueryProvider>
