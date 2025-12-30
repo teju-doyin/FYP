@@ -1,19 +1,20 @@
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import Link from 'next/link';
 import React from 'react';
 
 
 function SubmissionSuccess() {
   return (
     <div className='modal-background'>
-        <div className="modal-box ">
+        <div className="modal-box mt-15">
             <div className="w-[90%] mx-auto mb-9">
                 <div className="flex-between pb-3 pt-5">
                     <Image
                         src="/icons/checkmark-circle.png"
                         alt='Profile'
-                        width={20}
-                        height={20}
+                        width={50}
+                        height={50}
                     />
                     <Image
                       src="/icons/close.png"
@@ -28,18 +29,22 @@ function SubmissionSuccess() {
                 </div>
             </div>
             <div className=" flex flex-col w-[90%] mx-auto gap-4">
-                <Button
-                    variant="default"
-                    className='py-6 bg-blue-500 text-white text-lg hover:text-blue-500'
+                <Link
+                    href='/'
                 >
-                    <Image
-                      src="/icons/home-white.png"
-                      alt='Profile'
-                      width={20}
-                      height={20}
-                    />
-                    Go Home
-                </Button>
+                    <Button
+                        variant="default"
+                        className='py-6 w-full bg-blue-500 text-white text-lg hover:text-white'
+                    >
+                        <Image
+                        src="/icons/home-white.png"
+                        alt='Profile'
+                        width={20}
+                        height={20}
+                        />
+                        Go Home
+                    </Button>
+                </Link>
                 
             </div>
         </div>

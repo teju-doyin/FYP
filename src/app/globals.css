@@ -198,4 +198,10 @@
   .dot{
     @apply p-[3px] h-[1px] w-[1px] rounded-full
   }
+  .input-label{
+    @apply text-[#414651] font-medium text-lg mb-2
+  }
+  .input-field{
+    @apply py-36 placeholder:text-grey-200 placeholder:text-sm bg-white
+  }
 }
