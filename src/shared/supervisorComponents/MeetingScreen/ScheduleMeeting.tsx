@@ -60,7 +60,7 @@ const ScheduleMeeting = () => {
     <div>
       <PageLabel label="Schedule Meeting" />
 
-      <form action="" className="space-y-6 w-[95%] mx-auto">
+      <form action="" className="space-y-6 w-[95%] mx-auto  mt-18">
         <div>
           <p className="input-label">Subject*</p>
           <Input

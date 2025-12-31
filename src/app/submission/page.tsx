@@ -12,8 +12,10 @@ function Page() {
       <PageLabel 
         label = "Chapter Submission"
       />
-      <ChapterRequirements/>
-      <SelectFile/>
+      <div className="w-[95%] mx-auto">
+        <ChapterRequirements/>
+        <SelectFile/>
+      </div>
       {/* <SubmissionSuccess/> */}
     </div>
   )

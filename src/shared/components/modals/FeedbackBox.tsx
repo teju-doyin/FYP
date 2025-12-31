@@ -1,76 +1,115 @@
-import React from 'react'
-import { Button } from '@/components/ui/button';
-import Image from 'next/image';
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group"
+"use client";
 
-function FeedbackBox() {
+import React from "react";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
+
+export type FeedbackStatus = "action-required" | "needs-correction" | "approved";
+
+type FeedbackBoxProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  text: string;
+  status: FeedbackStatus;
+  onTextChange: (value: string) => void;
+  onStatusChange: (value: FeedbackStatus) => void;
+  onSubmit: () => void;
+  sending: boolean;
+};
+
+
+export function FeedbackBox({
+  open,
+  onOpenChange,
+  text,
+  status,
+  onTextChange,
+  onStatusChange,
+  onSubmit,
+  sending
+}: FeedbackBoxProps) {
+    
   return (
-    <div className='modal-background'>
-        <div className="modal-box ">
-            <div className="w-[90%] mx-auto mb-6">
-                <div className="flex-between pb-3 pt-5 mb-2">
-                    <h2 className='text-blue-800 font-semibold text-[20px]'>Feedback</h2>
-                    <Image
-                      src="/icons/arrow-shrink.png"
-                      alt='Profile'
-                      width={30}
-                      height={30}
-                    />
-                </div>
-                <div>
-                    <Textarea placeholder='Write here .....' className='mb-8 h-24 placeholder:text-grey-200'/>
-                    <RadioGroup
-                        defaultValue='not-started'
-                        className='space-y-3'
-                    >
-                        <div className="flex items-center gap-3">
-                            <RadioGroupItem 
-                                value="complete" id="r1" 
-                                className='size-'
-                            />
-                            <Label htmlFor="r1">
-                                <p className='text-red text-[18px]'>Action Required</p>
-                            </Label>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <RadioGroupItem 
-                                value="in-progress" id="r2" 
-                                className=''
-                            />
-                            <Label htmlFor="r2">
-                                <p className='text-yellow text-[18px]'>Needs Correction</p>
-                            </Label>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <RadioGroupItem 
-                                value="not-started" id="r3" 
-                                className=''
-                            />
-                            <Label htmlFor="r3">
-                                <p className='text-green text-[18px]'>Approve</p>
-                            </Label>
-                        </div>
-                    </RadioGroup>
-                </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w w-[95%] mx-auto">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-blue-800 font-semibold text-[20px]">
+              Feedback
+            </DialogTitle>
+
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="text-grey-300 text-xl leading-none"
+              >
+                ✕
+              </button>
+            </DialogClose>
+          </div>
+        </DialogHeader>
+
+        <div className="mb-4">
+          <Textarea
+            placeholder="Write here ....."
+            className="w-full mb-6 h-40 placeholder:text-grey-200 resize-none break-all"
+            value={text}
+            onChange={(e) => onTextChange(e.target.value)}
+        />
+
+          <RadioGroup
+            value={status}
+            onValueChange={(value) =>
+              onStatusChange(value as FeedbackStatus)
+            }
+            className="space-y-1.5"
+          >
+            <div className="flex items-center gap-3">
+              <RadioGroupItem value="action-required" id="r1" />
+              <Label htmlFor="r1" className="text-red text-[18px]">
+                Action Required
+              </Label>
             </div>
-            <div className=" flex flex-col w-[90%] mx-auto gap-4">
-                <Button
-                    variant="default"
-                    className='py-6 text-lg bg-blue-500 text-white'
-                >
-                    Finish Review
-                </Button>
-                
+
+            <div className="flex items-center gap-3">
+              <RadioGroupItem value="needs-correction" id="r2" />
+              <Label htmlFor="r2" className="text-yellow text-[18px]">
+                Needs Correction
+              </Label>
             </div>
+
+            <div className="flex items-center gap-3">
+              <RadioGroupItem value="approved" id="r3" />
+              <Label htmlFor="r3" className="text-green text-[18px]">
+                Approved
+              </Label>
+            </div>
+          </RadioGroup>
         </div>
 
-    </div>
-  )
+        <div className="flex flex-col w-full mx-auto gap-4 pb-2">
+          <Button
+            variant="default"
+            className="py-6 text-lg bg-blue-500 text-white"
+            type="button"
+            onClick={onSubmit}
+          >
+            {sending ? "Sending..." : "Finish Review"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
-export default FeedbackBox
+export default FeedbackBox;

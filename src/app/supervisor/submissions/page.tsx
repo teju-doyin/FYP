@@ -11,7 +11,7 @@ function Submissions() {
       <PageLabel 
         label = "Submissions"
       />
-      <div  className='w-[95%] mx-auto'>
+      <div  className='w-[95%] mx-auto  mt-18'>
         <Filter/>
         <Submission/>
       </div>

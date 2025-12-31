@@ -7,7 +7,7 @@ const Students = () => {
       <PageLabel 
         label = "Students"
       />
-      <div  className='w-[95%] mx-auto'>
+      <div  className='w-[95%] mx-auto mt-18'>
         <StudentCard/>
       </div>
     </div>

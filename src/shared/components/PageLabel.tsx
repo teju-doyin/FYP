@@ -3,7 +3,7 @@ import React from 'react'
 
 function PageLabel({label}:{label: string}) {
   return (
-    <header className='bg-white mb-4'>
+    <header className='bg-white mb-4 fixed top-0 z-[99] w-full'>
         <div className='w-[95%] mx-auto flex-between items-center  pt-4 pb-2'>
             <Image
               src="/icons/arrow-left.png"
