@@ -1,120 +1,271 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import Image from 'next/image'
-import React from 'react'
+"use client";
 
-interface comment{
-  id:number;
-  todo: string
-}
-interface Comment {
-  userId: number;
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+
+interface FirestoreComment {
+  id: string;
+  userId: string;
   userName: string;
-  userType: number; //0==student, 1=supervisor
-  timeStamp: string;
+  userType: "student" | "supervisor";
   message: string;
-  liked: boolean;
-  reply: Comment[];
+  createdAt?: any;
+  parentId: string | null;
+  likedBy?: string[];
 }
-const commentThread: Comment[] = [
-    {
-        userId: 0,
-        userName: "You",
-        userType: 0 ,
-        timeStamp:"14 min",
-        message: "Noted, I’ll correct the diagram as soon as possible.",
-        liked: true,
-        reply: [
-            {
-                userId: 2,
-                userName: "Prof. Adebowale",
-                userType: 1,
-                timeStamp:"Just Now",
-                message: "Great, submit the update by Tuesday.",
-                liked: false,
-                reply: []
-            }
-        ]
+
+interface CommentsProps {
+  studentId: string;
+  supervisorId: string;
+  chapterId: number;
+  feedbackDocId: string;
+}
+
+const Comments: React.FC<CommentsProps> = ({
+  studentId,
+  supervisorId,
+  chapterId,
+  feedbackDocId,
+}) => {
+  const { user } = useAuth();
+  const [comments, setComments] = useState<FirestoreComment[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+
+  // listen for comments
+  useEffect(() => {
+    if (!studentId || !feedbackDocId) return;
+
+    const commentsRef = collection(
+      db,
+      "users",
+      studentId,
+      "students",
+      studentId,
+      "chapters",
+      String(chapterId),
+      "feedbackHistory",
+      String(feedbackDocId),
+      "comments"
+    );
+
+    const q = query(commentsRef, orderBy("createdAt", "asc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const list: FirestoreComment[] = snap.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as any),
+      }));
+      setComments(list);
+    });
+
+    return () => unsub();
+  }, [studentId, chapterId, feedbackDocId]);
+
+  const handleSend = async () => {
+    if (!input.trim() || !user?.uid || !studentId || !feedbackDocId) return;
+
+    setLoading(true);
+    const message = input.trim();
+
+    try {
+      // 1) write to comments thread (always under the student)
+      const commentsRef = collection(
+        db,
+        "users",
+        studentId,
+        "students",
+        studentId,
+        "chapters",
+        String(chapterId),
+        "feedbackHistory",
+        String(feedbackDocId),
+        "comments"
+      );
+
+      const commentDoc = await addDoc(commentsRef, {
+        userId: user.uid,
+        userName: user.fullName || "You",
+        userType: user.uid === studentId ? "student" : "supervisor",
+        message,
+        createdAt: serverTimestamp(),
+        parentId: replyTo,
+        likedBy: [],
+      });
+
+      // 2a) notification for supervisor when student comments
+      if (user.uid === studentId && supervisorId) {
+        const notificationsRef = collection(db, "notifications");
+        const notifDoc = await addDoc(notificationsRef, {
+          type: "comment",
+          receiverId: supervisorId,
+          studentId,
+          chapterId,
+          feedbackDocId,
+          commentId: commentDoc.id,
+          title: `${
+            user.fullName || "Student"
+          } commented on Chapter ${chapterId}`,
+          preview: message.slice(0, 80),
+          read: false,
+          createdAt: serverTimestamp(),
+        });
+      }
+
+      // 2b) notification for student when supervisor replies
+      if (user.uid === supervisorId) {
+        const notificationsRef = collection(db, "notifications");
+        await addDoc(notificationsRef, {
+          type: "comment",
+          receiverId: studentId,
+          studentId,
+          chapterId,
+          feedbackDocId,
+          commentId: commentDoc.id,
+          title: `${
+            user.fullName || "Supervisor"
+          } replied on Chapter ${chapterId}`,
+          preview: message.slice(0, 80),
+          read: false,
+          createdAt: serverTimestamp(),
+        });
+      }
+
+      // clear input & reply state after successful send
+      setInput("");
+      setReplyTo(null);
+    } catch (e) {
+      console.error("Error sending comment:", e);
+    } finally {
+      setLoading(false);
     }
-]
-const Comments = () => {
+  };
+
+  const topLevel = useMemo(
+    () => comments.filter((c) => c.parentId === null),
+    [comments]
+  );
+
+  const repliesFor = (id: string) =>
+    comments.filter((c) => c.parentId === id);
+
   return (
     <div>
-        <div className="flex-between items-center mb-3">
-            <div className='flex gap-1 items-center'>
+      <div className="flex-between items-center mb-3">
+        <div className="flex gap-1 items-center">
+          <Image
+            src="/icons/comment.png"
+            alt="Comments"
+            width={20}
+            height={20}
+          />
+          <span className="text-grey-300">Comments</span>
+        </div>
+        <Image
+          src="/icons/arrow-up.png"
+          alt="Toggle"
+          width={20}
+          height={20}
+        />
+      </div>
+
+      <div className="comment-1 mb-4">
+        {topLevel.map((comment) => (
+          <div key={comment.id} className="mb-4">
+            <div className="flex-between items-end mb-2">
+              <div className="flex gap-1 items-center">
                 <Image
-                    src="/icons/comment.png"
-                    alt='Profile'
-                    width={20}
-                    height={20}
+                  src={`/${
+                    comment.userType === "student" ? "pfp" : "supervisor-pfp"
+                  }.png`}
+                  alt="Profile"
+                  width={30}
+                  height={30}
                 />
-                <span className='text-grey-300'>Comments</span>
+                <span className="font-semibold text-blue-500">
+                  {comment.userName}
+                </span>
+              </div>
             </div>
-            <Image
-                src="/icons/arrow-up.png"
-                alt='Profile'
+
+            <p className="text-[#272727] font-light mb-2">
+              {comment.message}
+            </p>
+
+            <div className="flex-between items-center">
+              <button
+                type="button"
+                className="flex gap-1 items-end"
+                onClick={() => setReplyTo(comment.id)}
+              >
+                <Image
+                  src="/icons/reply.png"
+                  alt="Reply"
+                  width={20}
+                  height={20}
+                />
+                <span className="text-[14px] text-[#8991A0]">Reply</span>
+              </button>
+              <Image
+                src={`/icons/${
+                  comment.likedBy?.includes(user?.uid || "")
+                    ? "like-filled"
+                    : "like"
+                }.png`}
+                alt="Like"
                 width={20}
                 height={20}
-            />
-        </div>
-        <div className="comment-1 mb-4">
-            {commentThread.map((comment)=>(
-
-            <div 
-                key={comment.userId}
-                className="header">
-                <div className='flex-between items-end mb-2'>
-                    <div className='flex gap-1'>
-                       <div>
-                           <Image
-                            src={`/${comment.userType === 0? "pfp" : "supervisor-pfp"}.png`}
-                            alt='Profile'
-                            width={30}
-                            height={30}
-                            />
-                       </div>
-                       <span className='font-semibold text-blue-500'>{comment.userName}</span>
-                    </div>
-                    <span className='font-light text-[#B4BBC6]'>{comment.timeStamp}</span>
-                </div>
-                <p className='text-[#272727] font-light mb-2'>{comment.message}</p>
-                <div className="flex-between items-center">
-                    <div className='flex gap-1 items-end'>
-                        <Image
-                            src="/icons/reply.png"
-                            alt='Profile'
-                            width={20}
-                            height={20}
-                        />
-                        <span className='text-[14px] text-[#8991A0]'>Reply</span>
-                    </div>
-                    <div>
-                        <Image
-                        src={`/icons/${comment.liked === true? "like-filled" : "like"}.png`}
-                        alt='Profile'
-                        width={20}
-                        height={20}
-                        />
-                    </div>
-                </div>
+              />
             </div>
-            ))}
 
+            <div className="mt-2 ml-8 space-y-3">
+              {repliesFor(comment.id).map((reply) => (
+                <div key={reply.id}>
+                  <p className="text-[#272727] text-sm">{reply.message}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="relative mb-3 space-y-2">
+        <Textarea
+          className="py-1.5 placeholder:font-light placeholder:text-[#9E9EA8] break-all"
+          placeholder={replyTo ? "Replying..." : "Type your comment here"}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) =>
+            e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSend())
+          }
+        />
+        <div className="flex justify-end">
+          <Button
+            variant="secondary"
+            className={`${
+              input.trim() ? "bg-blue-800" : "bg-blue-200"
+            } ${loading ? "text-grey-200" : "text-white"} px-3 py-1.5 hover:bg-blue-500 cursor-pointer`}
+            onClick={handleSend}
+            disabled={!input.trim() || loading}
+          >
+            {loading ? "Sending..." : "Send"}
+          </Button>
         </div>
-        <div className="relative mb-3">
-            <Input
-                className='py-5.5 placeholder:font-light placeholder:text-[#9E9EA8]'
-                placeholder='Type your comment here'
-            />
-            <Button
-                variant='secondary'
-                className='bg-blue-200 text-white px-3 py-1.5 absolute right-1 top-1.5'
-            >
-                Send
-            </Button>
-        </div>
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default Comments
+export default Comments;

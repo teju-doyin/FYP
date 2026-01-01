@@ -190,10 +190,10 @@
     @apply py-6 bg-blue-200 text-white text-lg hover:text-blue-500 
   }
   .modal-background{
-    @apply w-full absolute top-0 h-full bg-[#161616]/28 z-[100] backdrop-blur-[2px]
+    @apply w-full absolute top-0 h-dvh bg-[#161616]/28 z-[100] backdrop-blur-[2px]
   }
   .modal-box{
-    @apply w-[90%] mx-auto relative top-56 rounded-sm bg-[#ffff] pb-6
+    @apply w-[90%] mx-auto relative top-36 rounded-sm bg-[#ffff] pb-6
   }
   .dot{
     @apply p-[3px] h-[1px] w-[1px] rounded-full

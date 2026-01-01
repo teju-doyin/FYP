@@ -115,7 +115,7 @@ const SelectChapterModal: React.FC<ChapterModalProps> = ({
       <div className="modal-box">
         <div className="w-[90%] mx-auto pt-5">
           <p className="text-center text-[#535862] mb-4">
-            You can only submit the chapter you're currently working on
+            You can only submit the chapter you&apos;re currently working on
           </p>
 
           <ul className="space-y-3">

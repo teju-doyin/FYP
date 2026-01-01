@@ -3,6 +3,7 @@ import React from 'react'
 import Image from 'next/image'
 import { formatStringDate } from '@/lib/utils';
 import { useAuth } from "@/context/AuthContext";
+import Link from 'next/link';
 function SupervisorHomeHeader() {
   const today = formatStringDate()
   const { user } = useAuth();
@@ -22,12 +23,16 @@ function SupervisorHomeHeader() {
         </div>
       </div>
       <div className='p-2 rounded-sm bg-[#F2F2F2] relative'>
-        <Image
-          src="/icons/notification-bell.png"
-          alt='Profile'
-          width={20}
-          height={20}
-        />
+        <Link
+          href="/supervisor/notifications"
+        >
+          <Image
+            src="/icons/notification-bell.png"
+            alt='Profile'
+            width={20}
+            height={20}
+            />
+          </Link>
         <span className='p-1 bg-red rounded-full absolute top-2 right-2'></span>
       </div>
     </div>

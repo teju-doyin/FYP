@@ -8,7 +8,7 @@ function page() {
       <PageLabel
         label = "Feedback"
         />
-        <div className="w-[95%] mx-auto mt-18">
+        <div className="w-[95%] mx-auto mt-18 mb-30">
           <Feedback/>
         </div>
     </div>

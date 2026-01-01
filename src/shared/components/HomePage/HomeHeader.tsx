@@ -3,6 +3,7 @@ import Image from 'next/image'
 import React from 'react'
 import { formatStringDate } from '@/lib/utils';
 import { useAuth } from "@/context/AuthContext";
+import Link from 'next/link';
 
 function HomeHeader() {
   const today = formatStringDate()
@@ -24,12 +25,16 @@ function HomeHeader() {
         </div>
       </div>
       <div className='p-2 rounded-sm bg-[#F2F2F2] relative'>
-        <Image
-          src="/icons/notification-bell.png"
-          alt='Profile'
-          width={20}
-          height={20}
-        />
+        <Link
+          href="/notifications"
+        >
+          <Image
+            src="/icons/notification-bell.png"
+            alt='Profile'
+            width={20}
+            height={20}
+            />
+          </Link>
         <span className='p-1 bg-red rounded-full absolute top-2 right-2'></span>
       </div>
     </div>

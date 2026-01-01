@@ -24,9 +24,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const pathname = usePathname();
 
-  const hideNavbarOn = ["/login", "/signup"];
+  const hideNavbarOn = ["/login", "/signup", "/notifications", "/supervisor/notifications"];
   const shouldHideNavbar = hideNavbarOn.includes(pathname);
-  const hideOn =
+  const hideOnDocumentView =
   pathname.startsWith("/supervisor/submissions/documentView");
 
   return (
@@ -44,7 +44,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
             <main>{children}</main>
 
             {/* show navbar only when logged in */}
-            {!loading && user && !shouldHideNavbar && !hideOn && <Navbar />}
+            {!loading && user && !shouldHideNavbar && !hideOnDocumentView && <Navbar />}
           </div>
         )}
       </ToastProvider>
