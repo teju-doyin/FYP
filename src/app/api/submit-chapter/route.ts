@@ -1,3 +1,4 @@
+// /app/api/submit-chapter/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import admin from "firebase-admin";
@@ -66,61 +67,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: uploadError.message }, { status: 400 });
     }
 
-    // 4) Firestore transaction:
-    // - read current chapter status + previous objectKey
-    // - set status = complete (unless already approved)
-    // - save new submission pointer
-    // Then delete old file (outside transaction) if needed.
+    // 4) SIMPLE Firestore write (no transaction)
     const db = admin.firestore();
     const userRef = db.collection("users").doc(uid).collection("students").doc(uid);
 
+    // read current doc once
+    const snap = await userRef.get();
+    const data = snap.exists ? (snap.data() as any) : {};
+    const chapterData = data?.chapters?.[chapter];
 
-    let oldObjectKey: string | null = null;
-    let statusAfterWrite: string = "complete";
+    const existingStatus = chapterData?.status as string | undefined;
+    const oldObjectKey: string | null = chapterData?.submission?.objectKey ?? null;
 
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(userRef);
+    // don't downgrade approved
+    const statusAfterWrite =
+      existingStatus === "approved" ? "approved" : "complete";
 
-      const data = snap.exists ? (snap.data() as any) : {};
-      const chapterData = data?.chapters?.[chapter];
-
-      const existingStatus = chapterData?.status as string | undefined;
-      oldObjectKey = chapterData?.submission?.objectKey ?? null;
-
-      // Don't downgrade approved chapters
-      statusAfterWrite = existingStatus === "approved" ? "approved" : "complete";
-
-      tx.set(
-        userRef,
-        {
-          chapters: {
-            [chapter]: {
-              status: statusAfterWrite,
-              submission: {
-                provider: "supabase",
-                bucket,
-                objectKey,
-                originalFileName: file.name,
-                fileSize: file.size,
-                uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
-              },
+    await userRef.set(
+      {
+        chapters: {
+          [chapter]: {
+            status: statusAfterWrite,
+            submission: {
+              provider: "supabase",
+              bucket,
+              objectKey,
+              originalFileName: file.name,
+              fileSize: file.size,
+              uploadedAt: admin.firestore.FieldValue.serverTimestamp(),
             },
           },
-          currentChapter: chapter,
-          lastSubmission: admin.firestore.FieldValue.serverTimestamp(),
         },
-        { merge: true }
-      );
-    });
+        currentChapter: chapter,
+        lastSubmission: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
 
     // 5) Delete previous Supabase file if it exists and is different
-    // Supabase remove() takes an array of file paths. [page:17]
     if (oldObjectKey && oldObjectKey !== objectKey) {
       const { error: removeError } = await supabase.storage
         .from(bucket)
         .remove([oldObjectKey]);
 
-      // Optional: log but don't fail the whole request
       if (removeError) console.warn("Failed to remove old file:", removeError);
     }
 
@@ -132,6 +121,7 @@ export async function POST(req: NextRequest) {
       replaced: !!oldObjectKey && oldObjectKey !== objectKey,
     });
   } catch (e: any) {
+    console.error("submit-chapter error", e);
     return NextResponse.json(
       { error: e?.message || "Server error" },
       { status: 500 }

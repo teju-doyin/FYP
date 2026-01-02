@@ -22,7 +22,6 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
 
   if (!user) return null;
 
-  // student if this notification belongs to their project
   const isStudent = user.uid === item.studentId;
   const isSupervisor = !isStudent;
 
@@ -33,7 +32,6 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
     const message = replyText.trim();
 
     try {
-      // 1) write reply into same comments thread (under the student)
       const commentsRef = collection(
         db,
         "users",
@@ -47,9 +45,15 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
         "comments"
       );
 
+      const currentUserName =
+        (user as any).fullName ||
+        (user as any).displayName ||
+        (user as any).email ||
+        "Supervisor";
+
       const replyDoc = await addDoc(commentsRef, {
         userId: user.uid,
-        userName: user.fullName || "Supervisor",
+        userName: currentUserName,
         userType: "supervisor" as const,
         message,
         createdAt: serverTimestamp(),
@@ -57,7 +61,6 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
         likedBy: [],
       });
 
-      // 2) create notification for student
       const notificationsRef = collection(db, "notifications");
       await addDoc(notificationsRef, {
         type: "comment",
@@ -66,7 +69,8 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
         chapterId: item.chapterId,
         feedbackDocId: item.feedbackDocId,
         commentId: replyDoc.id,
-        title: "Your supervisor left a comment",
+        // show supervisor name as title
+        title: currentUserName,
         preview: message.slice(0, 80),
         read: false,
         createdAt: serverTimestamp(),
@@ -87,6 +91,12 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
     );
   };
 
+  const handleViewSubmission = () => {
+    router.push(
+      `/submissions?student=${item.studentId}&chapter=${item.chapterId}`
+    );
+  };
+
   const formattedDate = item.createdAt.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
@@ -99,9 +109,8 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
   return (
     <div className="rounded-sm bg-white shadow-sm border border-gray-100 p-3">
       <div className="flex items-start gap-2">
-        {/* Avatar */}
         <Image
-          src="/pfp.png"
+          src={`${isSupervisor ? "/pfp.png" : "/supervisor-pfp.png"}`}
           alt="Avatar"
           width={32}
           height={32}
@@ -109,60 +118,80 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
         />
 
         <div className="flex-1">
-          {/* Title + meta */}
+          {/* Title now is the sender name, e.g. "Prof. Adebowale" */}
           <p className="text-sm font-semibold text-gray-900">{item.title}</p>
           <p className="text-[11px] text-gray-400">
             {formattedDate} • {formattedTime}
           </p>
 
-          {/* Preview */}
           <p className="mt-1 text-grey-700">{item.preview}</p>
 
           {isSupervisor ? (
             <>
-              {/* Supervisor: reply inline */}
-              <button
-                className="mt-2 text-[14px] font-semibold text-blue-500"
-                onClick={() => setReplyOpen((v) => !v)}
-              >
-                {replyOpen ? "Cancel" : "Reply"}
-              </button>
+              {item.type === "submission" && (
+                <Button
+                  className="mt-2 px-3 py-1 text-xs bg-blue-500 text-white rounded-md"
+                  onClick={handleViewSubmission}
+                >
+                  View submission
+                </Button>
+              )}
 
-              {replyOpen && (
-                <div className="mt-2">
-                  <textarea
-                    className="w-full border border-grey-200 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
-                    rows={3}
-                    placeholder="Type your reply..."
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                  />
-                  <div className="mt-2 flex justify-end">
-                    <Button
-                      className="px-3 py-1 bg-blue-500 text-white rounded-md"
-                      onClick={handleReplySend}
-                      disabled={!replyText.trim() || sending}
-                    >
-                      {sending ? "Sending..." : "Send reply"}
-                    </Button>
-                  </div>
-                </div>
+              {item.type === "comment" && (
+                <>
+                  <button
+                    className="mt-2 text-[14px] font-semibold text-blue-500"
+                    onClick={() => setReplyOpen((v) => !v)}
+                  >
+                    {replyOpen ? "Cancel" : "Reply"}
+                  </button>
+
+                  {replyOpen && (
+                    <div className="mt-2">
+                      <textarea
+                        className="w-full border border-grey-200 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        rows={3}
+                        placeholder="Type your reply..."
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                      />
+                      <div className="mt-2 flex justify-end">
+                        <Button
+                          className="px-3 py-1 bg-blue-500 text-white rounded-md"
+                          onClick={handleReplySend}
+                          disabled={!replyText.trim() || sending}
+                        >
+                          {sending ? "Sending..." : "Send reply"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </>
           ) : (
             <>
-              {/* Student: only view feedback */}
-              <Button
-                className="mt-2 px-3 py-1 text-xs bg-blue-500 text-white rounded-md"
-                onClick={handleViewFeedback}
-              >
-                View feedback
-              </Button>
+              {item.type === "feedback" && (
+                <Button
+                  className="mt-2 px-3 py-1 text-xs bg-blue-500 text-white rounded-md"
+                  onClick={handleViewFeedback}
+                >
+                  View feedback
+                </Button>
+              )}
+
+              {item.type === "comment" && (
+                <Button
+                  className="mt-2 px-3 py-1 text-xs bg-blue-500 text-white rounded-md"
+                  onClick={handleViewFeedback}
+                >
+                  View comment
+                </Button>
+              )}
             </>
           )}
         </div>
 
-        {/* Unread dot */}
         {!item.read && (
           <span className="mt-2 w-2 h-2 rounded-full bg-blue-500" />
         )}

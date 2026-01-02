@@ -7,8 +7,6 @@ import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrentChapter } from "@/lib/getCurrentChapter";
 
-// IMPORTANT: make sure you can access Firebase Auth's current user
-// If you already export auth from "@/lib/firebase", use that instead.
 import { getAuth } from "firebase/auth";
 import SubmissionSuccess from "../modals/SubmissionSuccess";
 
@@ -25,7 +23,7 @@ const SelectFile = () => {
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const allowedTypes = [
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -86,7 +84,6 @@ const SelectFile = () => {
       setUploadState("uploading");
       setProgress(0);
 
-      // 1) Get Firebase ID token (send to your backend for verification)
       const auth = getAuth();
       const token = await auth.currentUser?.getIdToken(true);
       if (!token) {
@@ -95,12 +92,10 @@ const SelectFile = () => {
         return;
       }
 
-      // 2) Build FormData
       const form = new FormData();
       form.append("chapter", String(currentChapter));
       form.append("file", file);
 
-      // 3) Upload via XHR (progress + cancel)
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
 
@@ -136,15 +131,14 @@ const SelectFile = () => {
           // ignore
         }
 
+        console.log("submit-chapter response:", xhr.status, payload);
+
         if (xhr.status >= 200 && xhr.status < 300) {
-          // Server has already:
-          // - uploaded to Supabase private bucket
-          // - updated Firestore chapters.{n}.status + submission pointer
           setFile(null);
           setUploadState("idle");
           setProgress(0);
           if (fileInputRef.current) fileInputRef.current.value = "";
-          setShowSuccessModal(true)
+          setShowSuccessModal(true);
         } else {
           setError(payload?.error || `Upload failed (${xhr.status}).`);
           setUploadState("selected");
@@ -208,7 +202,7 @@ const SelectFile = () => {
       return (
         <div className="h-full flex flex-col gap-2 justify-center items-center text-center">
           <p className="font-light text-sm text-grey-300">File Selected:</p>
-          <p className="text-[18px] text-grey-600 font-medium">{file.name}</p>
+          <p className="text-[14px] text-grey-600 font-medium">{file.name}</p>
           <p className="text-xs text-grey-300">
             ({(file.size / 1024 / 1024).toFixed(1)} MB)
           </p>
@@ -242,7 +236,7 @@ const SelectFile = () => {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".docx,.pdf"
+              accept=".pdf"
               className="hidden"
               onChange={handleFileChange}
               disabled={uploadState === "uploading"}
@@ -251,8 +245,7 @@ const SelectFile = () => {
           </div>
 
           <p className="text-center text-grey-300 text-sm font-light mb-8">
-            Formats accepted are{" "}
-            <span className="text-grey-600 font-medium">.docx</span> and{" "}
+            Format accepted is{" "}
             <span className="text-grey-600 font-medium">.pdf</span>
           </p>
 
@@ -282,13 +275,16 @@ const SelectFile = () => {
                     : "bg-grey-200 text-grey-300 cursor-not-allowed"
                 }`}
               >
-                {chapterLoading ? "Loading chapter..." : `Submit Chapter ${currentChapter}`}
+                {chapterLoading
+                  ? "Loading chapter..."
+                  : `Submit Chapter ${currentChapter}`}
               </Button>
             )}
           </div>
         </div>
       </section>
-      {showSuccessModal && <SubmissionSuccess/>}
+
+      {showSuccessModal && <SubmissionSuccess />}
     </div>
   );
 };

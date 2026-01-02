@@ -1,14 +1,13 @@
-// src/types/notifications.ts
-export type NotificationKind = "comment" | "feedback" |"submission";
+export type NotificationType = "comment" | "feedback" | "submission";
 
 export interface NotificationItem {
   id: string;
-  type: NotificationKind;
+  type: NotificationType;
   receiverId: string;
   studentId: string;
   chapterId: number;
-  feedbackDocId?: string;
-  commentId?: string;
+  feedbackDocId?: string | null;
+  commentId?: string | null;
   title: string;
   preview: string;
   read: boolean;

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useParams } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { Document, Page, pdfjs } from "react-pdf";
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -39,7 +39,6 @@ export default function DocumentView() {
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState<string | null>(null);
 
-  // single state to control shadcn dialog
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackStatus, setFeedbackStatus] = useState<FeedbackStatus>("action-required");
@@ -55,7 +54,6 @@ export default function DocumentView() {
     };
     fetchName();
   }, [studentUid]);
-
 
   const handleSubmitFeedback = async () => {
     if (!studentUid || !chapterNum) return;
@@ -75,7 +73,7 @@ export default function DocumentView() {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          authorization: `Bearer ${token}`,   // << add this
+          authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           studentUid,
@@ -91,6 +89,25 @@ export default function DocumentView() {
         return;
       }
 
+      // NEW: create notification for student about feedback
+      try {
+        const notificationsRef = collection(db, "notifications");
+        await addDoc(notificationsRef, {
+          type: "feedback",
+          receiverId: studentUid,
+          studentId: studentUid,
+          chapterId: chapterNum,
+          feedbackDocId: json.feedbackId ?? null, // ensure API returns this
+          commentId: null,
+          title: `Your supervisor left a feedback on your ${chapterTitle}`,
+          preview: feedbackText.slice(0, 80),
+          read: false,
+          createdAt: serverTimestamp(),
+        });
+      } catch (notifErr) {
+        console.error("Failed to create feedback notification:", notifErr);
+      }
+
       setFeedbackText("");
       setFeedbackStatus("action-required");
       setFeedbackOpen(false);
@@ -101,9 +118,6 @@ export default function DocumentView() {
       setSendingFeedback(false);
     }
   };
-
-
-
 
   useEffect(() => {
     const run = async () => {
@@ -178,66 +192,65 @@ export default function DocumentView() {
 
       {!feedbackOpen && (
         <div className="w-full fixed bottom-0 bg-white left-0 z-[99] rounded-t-xl shadow">
-        <div className="w-[90%] mx-auto my-4">
-          <div className="flex-between items-center mb-4">
-            <p className="text-grey-300">
-              Page{" "}
-              <span className="text-blue-500 font-semibold">{pageNumber}</span>{" "}
-              of{" "}
-              <span className="text-blue-500 font-semibold">
-                {numPages || "—"}
-              </span>
-            </p>
-            <Button
-              variant="default"
-              className="py-4 px-2 rounded-[5px] bg-blue-500 text-white text-[14px]"
-              onClick={() => setFeedbackOpen(true)}
-            >
-              <Image
-                src="/icons/add-feedback.png"
-                alt="add feedback"
-                width={20}
-                height={20}
-              />
-            </Button>
-          </div>
-          <div className="flex justify-between gap-3">
-            <Button
-              variant="outline"
-              disabled={pageNumber <= 1}
-              onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
-            >
-              Prev
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!numPages || pageNumber >= numPages}
-              onClick={() => setPageNumber((p) => Math.min(numPages, p + 1))}
-            >
-              Next
-            </Button>
+          <div className="w-[90%] mx-auto my-4">
+            <div className="flex-between items-center mb-4">
+              <p className="text-grey-300">
+                Page{" "}
+                <span className="text-blue-500 font-semibold">{pageNumber}</span>{" "}
+                of{" "}
+                <span className="text-blue-500 font-semibold">
+                  {numPages || "—"}
+                </span>
+              </p>
+              <Button
+                variant="default"
+                className="py-4 px-2 rounded-[5px] bg-blue-500 text-white text-[14px]"
+                onClick={() => setFeedbackOpen(true)}
+              >
+                <Image
+                  src="/icons/add-feedback.png"
+                  alt="add feedback"
+                  width={20}
+                  height={20}
+                />
+              </Button>
+            </div>
+            <div className="flex justify-between gap-3">
+              <Button
+                variant="outline"
+                disabled={pageNumber <= 1}
+                onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
+              >
+                Prev
+              </Button>
+              <Button
+                variant="outline"
+                disabled={!numPages || pageNumber >= numPages}
+                onClick={() => setPageNumber((p) => Math.min(numPages, p + 1))}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
       <FeedbackBox
-      open={feedbackOpen}
-      onOpenChange={setFeedbackOpen}
-      text={feedbackText}
-      status={feedbackStatus}
-      onTextChange={setFeedbackText}
-      onStatusChange={setFeedbackStatus}
-      onSubmit={handleSubmitFeedback}
-      sending={sendingFeedback}
-    />
+        open={feedbackOpen}
+        onOpenChange={setFeedbackOpen}
+        text={feedbackText}
+        status={feedbackStatus}
+        onTextChange={setFeedbackText}
+        onStatusChange={setFeedbackStatus}
+        onSubmit={handleSubmitFeedback}
+        sending={sendingFeedback}
+      />
 
       <FeedbackSent
         open={feedbackSentOpen}
         onClose={() => setFeedbackSentOpen(false)}
         studentName={studentName}
       />
-
     </div>
   );
 }

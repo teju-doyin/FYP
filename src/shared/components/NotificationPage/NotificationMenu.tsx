@@ -53,7 +53,6 @@ const NotificationsMenu: React.FC = () => {
     return () => unsub();
   }, [user?.uid]);
 
-  // infer view type from data: if any notification's studentId is current user, treat as student
   const isStudentView = items.some((n) => n.studentId === user?.uid);
   const tabs: Tab[] = isStudentView
     ? ["all", "comment", "feedback"]
@@ -72,7 +71,6 @@ const NotificationsMenu: React.FC = () => {
   return (
     <div className="relative">
       <div>
-        {/* Tabs */}
         <div className="flex mb-4 bg-white rounded-sm shadow-sm border overflow-hidden border-b border-gray-100 text-xs font-medium">
           {tabs.map((tab) => (
             <button
@@ -89,8 +87,7 @@ const NotificationsMenu: React.FC = () => {
           ))}
         </div>
 
-        {/* List */}
-        <div className="max-h-96 overflow-y-auto space-y-2">
+        <div className="overflow-y-auto space-y-2">
           {filtered.length === 0 && (
             <p className="text-gray-400 text-center pt-44">
               No notifications yet.

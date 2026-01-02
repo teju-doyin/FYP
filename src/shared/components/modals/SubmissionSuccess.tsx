@@ -6,8 +6,8 @@ import React from 'react';
 
 function SubmissionSuccess() {
   return (
-    <div className='modal-background'>
-        <div className="modal-box mt-15">
+    <div className='modal-background inset-0'>
+        <div className="modal-box mt-15 ">
             <div className="w-[90%] mx-auto mb-9">
                 <div className="flex-between pb-3 pt-5">
                     <Image

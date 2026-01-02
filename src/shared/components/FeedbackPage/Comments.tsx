@@ -95,9 +95,13 @@ const Comments: React.FC<CommentsProps> = ({
         "comments"
       );
 
+      const currentUserName =
+        user.fullName||
+        (user.uid === studentId ? "Student" : "Supervisor");
+
       const commentDoc = await addDoc(commentsRef, {
         userId: user.uid,
-        userName: user.fullName || "You",
+        userName: currentUserName,
         userType: user.uid === studentId ? "student" : "supervisor",
         message,
         createdAt: serverTimestamp(),
@@ -108,16 +112,15 @@ const Comments: React.FC<CommentsProps> = ({
       // 2a) notification for supervisor when student comments
       if (user.uid === studentId && supervisorId) {
         const notificationsRef = collection(db, "notifications");
-        const notifDoc = await addDoc(notificationsRef, {
+        await addDoc(notificationsRef, {
           type: "comment",
           receiverId: supervisorId,
           studentId,
           chapterId,
           feedbackDocId,
           commentId: commentDoc.id,
-          title: `${
-            user.fullName || "Student"
-          } commented on Chapter ${chapterId}`,
+          // show the student's name as title
+          title: currentUserName,
           preview: message.slice(0, 80),
           read: false,
           createdAt: serverTimestamp(),
@@ -134,9 +137,8 @@ const Comments: React.FC<CommentsProps> = ({
           chapterId,
           feedbackDocId,
           commentId: commentDoc.id,
-          title: `${
-            user.fullName || "Supervisor"
-          } replied on Chapter ${chapterId}`,
+          // show the supervisor's name as title (e.g. "Prof. Adebowale")
+          title: currentUserName,
           preview: message.slice(0, 80),
           read: false,
           createdAt: serverTimestamp(),
@@ -195,7 +197,7 @@ const Comments: React.FC<CommentsProps> = ({
                   height={30}
                 />
                 <span className="font-semibold text-blue-500">
-                  {comment.userName}
+                  You
                 </span>
               </div>
             </div>
@@ -204,37 +206,56 @@ const Comments: React.FC<CommentsProps> = ({
               {comment.message}
             </p>
 
-            <div className="flex-between items-center">
-              <button
-                type="button"
-                className="flex gap-1 items-end"
-                onClick={() => setReplyTo(comment.id)}
-              >
-                <Image
-                  src="/icons/reply.png"
-                  alt="Reply"
-                  width={20}
-                  height={20}
-                />
-                <span className="text-[14px] text-[#8991A0]">Reply</span>
-              </button>
-              <Image
-                src={`/icons/${
-                  comment.likedBy?.includes(user?.uid || "")
-                    ? "like-filled"
-                    : "like"
-                }.png`}
-                alt="Like"
-                width={20}
-                height={20}
-              />
-            </div>
 
-            <div className="mt-2 ml-8 space-y-3">
+            <div className="mt-4 ml-1 space-y-3">
               {repliesFor(comment.id).map((reply) => (
-                <div key={reply.id}>
-                  <p className="text-[#272727] text-sm">{reply.message}</p>
+                <>
+                  <div key={reply.id} className="flex gap-1 ">
+                    <div className="w-[2px] border border-dashed border-grey-50 rounded-sm "></div>
+                    <div className="ml-1">
+                        <div className="flex gap-2 items-center mb-1">
+                            <Image
+                                src={`/${
+                                reply.userType === "student" ? "pfp" : "supervisor-pfp"
+                                }.png`}
+                                alt="Profile"
+                                width={30}
+                                height={30}
+                                className="rounded-full"
+                            />
+                            <p className="font-semibold text-blue-500">
+                            {reply.userName}
+                            </p>
+                        </div>
+                        <p className="text-[#272727] font-light">{reply.message}</p>
+                    </div>
                 </div>
+                <div className="flex-between items-center">
+                <button
+                    type="button"
+                    className="flex gap-1 items-end"
+                    onClick={() => setReplyTo(comment.id)}
+                >
+                    <Image
+                    src="/icons/reply.png"
+                    alt="Reply"
+                    width={20}
+                    height={20}
+                    />
+                    <span className="text-[14px] text-[#8991A0]">Reply</span>
+                </button>
+                <Image
+                    src={`/icons/${
+                    comment.likedBy?.includes(user?.uid || "")
+                        ? "like-filled"
+                        : "like"
+                    }.png`}
+                    alt="Like"
+                    width={20}
+                    height={20}
+                />
+                </div>
+                </>
               ))}
             </div>
           </div>
@@ -248,7 +269,9 @@ const Comments: React.FC<CommentsProps> = ({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) =>
-            e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSend())
+            e.key === "Enter" &&
+            !e.shiftKey &&
+            (e.preventDefault(), handleSend())
           }
         />
         <div className="flex justify-end">
@@ -256,7 +279,9 @@ const Comments: React.FC<CommentsProps> = ({
             variant="secondary"
             className={`${
               input.trim() ? "bg-blue-800" : "bg-blue-200"
-            } ${loading ? "text-grey-200" : "text-white"} px-3 py-1.5 hover:bg-blue-500 cursor-pointer`}
+            } ${
+              loading ? "text-grey-200" : "text-white"
+            } px-3 py-1.5 hover:bg-blue-500 cursor-pointer`}
             onClick={handleSend}
             disabled={!input.trim() || loading}
           >
