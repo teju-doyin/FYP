@@ -8,6 +8,8 @@ import { useErrorStore } from "@/shared/stores/error.store";
 import BlockerPage from "@/shared/components/BlockerPage";
 import Navbar from "@/shared/components/Navbar";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { ApprovalNotificationProvider } from "@/context/ApprovalNotificationContext";
+
 import { usePathname } from "next/navigation";
 
 const notoSans = Noto_Sans({
@@ -61,7 +63,11 @@ export default function RootLayout({
     <html lang="en" className={`${notoSans.variable} ${nunito.variable}`}>
       <body className="antialiased bg-[#F9F9FC]">
         <AuthProvider>
-          <AppShell>{children}</AppShell>
+          <ApprovalNotificationProvider>
+            <AppShell>
+              {children}
+            </AppShell>
+          </ApprovalNotificationProvider>
         </AuthProvider>
       </body>
     </html>

@@ -1,4 +1,4 @@
-// /app/api/submit-chapter/route.ts
+// app/api/submit-chapter/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import admin from "firebase-admin";
@@ -8,7 +8,9 @@ export const runtime = "nodejs";
 function initFirebaseAdmin() {
   if (admin.apps.length) return;
 
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
+  const serviceAccount = JSON.parse(
+    process.env.FIREBASE_SERVICE_ACCOUNT_KEY!,
+  );
 
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -23,35 +25,47 @@ export async function POST(req: NextRequest) {
   try {
     initFirebaseAdmin();
 
-    // 1) Verify Firebase ID token
+    // 1) Auth
     const authHeader = req.headers.get("authorization") || "";
     const idToken = authHeader.startsWith("Bearer ")
       ? authHeader.slice("Bearer ".length)
       : null;
 
     if (!idToken) {
-      return NextResponse.json({ error: "Missing auth token" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Missing auth token" },
+        { status: 401 },
+      );
     }
 
     const decoded = await admin.auth().verifyIdToken(idToken);
     const uid = decoded.uid;
 
-    // 2) Read form-data
+    // 2) Parse form-data
     const form = await req.formData();
-    const chapter = Number(form.get("chapter"));
+    const chapterRaw = form.get("chapter");
     const file = form.get("file") as File | null;
 
-    if (!file || !chapter) {
+    if (!file || chapterRaw == null) {
       return NextResponse.json(
         { error: "file and chapter are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // 3) Supabase upload
+    const chapter = Number(chapterRaw);
+
+    if (!Number.isFinite(chapter) || chapter <= 0) {
+      return NextResponse.json(
+        { error: "invalid chapter value" },
+        { status: 400 },
+      );
+    }
+
+    // 3) Upload to Supabase
     const supabase = createClient(
       process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
     const bucket = "chapter-submissions";
@@ -61,32 +75,45 @@ export async function POST(req: NextRequest) {
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(objectKey, bytes, { contentType: file.type, upsert: false });
+      .upload(objectKey, bytes, {
+        contentType: file.type,
+        upsert: false,
+      });
 
     if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 400 });
+      return NextResponse.json(
+        { error: uploadError.message },
+        { status: 400 },
+      );
     }
 
-    // 4) SIMPLE Firestore write (no transaction)
+    // 4) Update Firestore
     const db = admin.firestore();
-    const userRef = db.collection("users").doc(uid).collection("students").doc(uid);
+    const userRef = db
+      .collection("users")
+      .doc(uid)
+      .collection("students")
+      .doc(uid);
 
-    // read current doc once
     const snap = await userRef.get();
     const data = snap.exists ? (snap.data() as any) : {};
-    const chapterData = data?.chapters?.[chapter];
+    const chapterKey = String(chapter);
+    const chapterData = data?.chapters?.[chapterKey];
 
     const existingStatus = chapterData?.status as string | undefined;
-    const oldObjectKey: string | null = chapterData?.submission?.objectKey ?? null;
+    const oldObjectKey: string | null =
+      chapterData?.submission?.objectKey ?? null;
 
-    // don't downgrade approved
+    // If chapter already approved, keep it approved; otherwise mark as complete
     const statusAfterWrite =
       existingStatus === "approved" ? "approved" : "complete";
 
     await userRef.set(
       {
         chapters: {
-          [chapter]: {
+          [chapterKey]: {
+            // keep existing nested fields and overwrite status/submission only
+            ...(chapterData || {}),
             status: statusAfterWrite,
             submission: {
               provider: "supabase",
@@ -101,16 +128,18 @@ export async function POST(req: NextRequest) {
         currentChapter: chapter,
         lastSubmission: admin.firestore.FieldValue.serverTimestamp(),
       },
-      { merge: true }
+      { merge: true },
     );
 
-    // 5) Delete previous Supabase file if it exists and is different
+    // 5) Remove old file if replaced
     if (oldObjectKey && oldObjectKey !== objectKey) {
       const { error: removeError } = await supabase.storage
         .from(bucket)
         .remove([oldObjectKey]);
 
-      if (removeError) console.warn("Failed to remove old file:", removeError);
+      if (removeError) {
+        console.warn("Failed to remove old file:", removeError);
+      }
     }
 
     return NextResponse.json({
@@ -121,10 +150,10 @@ export async function POST(req: NextRequest) {
       replaced: !!oldObjectKey && oldObjectKey !== objectKey,
     });
   } catch (e: any) {
-    console.error("submit-chapter error", e);
+    console.error("submit-chapter error", e?.message, e?.stack);
     return NextResponse.json(
       { error: e?.message || "Server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

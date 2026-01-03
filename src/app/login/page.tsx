@@ -180,8 +180,8 @@ const Login = () => {
         </Button>
       </form>
 
-      <p>
-        Don't have an account yet? Sign up
+      <p className="text-center mb-12">
+        Don&apos;t have an account yet? Sign up
         <Link
           href="/signup"
           className="underline text-blue-800 font-semibold ml-1"

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import {
-  collectionGroup,
+  collection,
   doc,
   getDoc,
   onSnapshot,
@@ -60,69 +60,69 @@ export default function Submission() {
 
   // 1) Listen to supervisee progress docs (collectionGroup)
   useEffect(() => {
-    if (!supervisorUid) return;
+  if (!supervisorUid) return;
 
-    setLoading(true);
+  setLoading(true);
 
-    const q = query(
-      collectionGroup(db, "students"),
-      where("assignedSupervisorId", "==", supervisorUid)
-    );
+  // 1) listen to users assigned to this supervisor
+  const q = query(
+    collection(db, "users"),
+    where("assignedSupervisorId", "==", supervisorUid)
+  );
 
-    const unsub = onSnapshot(
-      q,
-      async (snap) => {
-        // Build cards from each supervisee doc
-        const results: SubmissionCard[] = [];
+  const unsub = onSnapshot(
+    q,
+    async (userSnap) => {
+      const results: SubmissionCard[] = [];
 
-        for (const d of snap.docs) {
-          const progress = d.data() as any;
+      for (const u of userSnap.docs) {
+        const userData = u.data() as any;
+        const studentUid = u.id;
 
-          // In your structure, the progress doc id is the student uid
-          const studentUid = d.id;
+        // 2) load that student's progress doc from subcollection
+        const progressSnap = await getDoc(
+          doc(db, "users", studentUid, "students", studentUid)
+        );
+        const progress = (progressSnap.data() as any) || {};
 
-          // Fetch student profile for display (name/title)
-          const userSnap = await getDoc(doc(db, "users", studentUid));
-          const userData = (userSnap.data() as any) || {};
+        // 3) walk through chapters 1..5 as before
+        for (let ch = 1; ch <= 5; ch++) {
+          const chKey = String(ch);
+          const chData = progress?.chapters?.[chKey];
+          if (!chData) continue;
 
-          // Walk through chapters 1..5 and add those that are complete
-          for (let ch = 1; ch <= 5; ch++) {
-            const chKey = String(ch);
-            const chData = progress?.chapters?.[chKey];
-            if (!chData) continue;
+          const st = (chData.status ?? "").toLowerCase();
+          if (st !== "complete" && st !== "approved") continue;
 
-            if (chData.status !== "complete") continue; // show only pending reviews
-
-            results.push({
-              id: `${studentUid}:ch${ch}`,
-              projectTitle: userData.projectTitle ?? "—",
-              chapterNumber: ch,
-              chapterTitle: chapterTitles[ch - 1] ?? `Chapter ${ch}`,
-              dateLabel: formatDate(chData?.submission?.uploadedAt),
-              studentUid,
-              studentName: userData.fullName ?? userData.email ?? studentUid,
-              studentAvatarUrl: userData.avatarUrl ?? "/pfp-2.png",
-              bucket: chData?.submission?.bucket,
-              objectKey: chData?.submission?.objectKey,
-            });
-          }
+          results.push({
+            id: `${studentUid}:ch${ch}`,
+            projectTitle: userData.projectTitle ?? "—",
+            chapterNumber: ch,
+            chapterTitle: chapterTitles[ch - 1] ?? `Chapter ${ch}`,
+            dateLabel: formatDate(chData?.submission?.uploadedAt),
+            studentUid,
+            studentName: userData.fullName ?? userData.email ?? studentUid,
+            studentAvatarUrl: userData.avatarUrl ?? "/pfp-2.png",
+            bucket: chData?.submission?.bucket,
+            objectKey: chData?.submission?.objectKey,
+          });
         }
-
-        // optional: newest first if uploadedAt exists (simple sort)
-        results.sort((a, b) => (a.dateLabel < b.dateLabel ? 1 : -1));
-
-        setCards(results);
-        setLoading(false);
-      },
-      (err) => {
-        console.error(err);
-        setCards([]);
-        setLoading(false);
       }
-    );
 
-    return () => unsub();
-  }, [supervisorUid]);
+      results.sort((a, b) => (a.dateLabel < b.dateLabel ? 1 : -1));
+      setCards(results);
+      setLoading(false);
+    },
+    (err) => {
+      console.error(err);
+      setCards([]);
+      setLoading(false);
+    }
+  );
+
+  return () => unsub();
+}, [supervisorUid]);
+
 
   const handleOpen = (card: SubmissionCard) => {
     if (!supervisorUid) return;
@@ -143,6 +143,14 @@ export default function Submission() {
   };
 
   if (loading) return <p className="text-grey-200">Loading...</p>;
+  if (!loading && cards.length === 0) {
+  return (
+    <p className="text-grey-300 text-sm">
+      No chapter submissions waiting for your review yet.
+    </p>
+  );
+}
+
 
   return (
     <div className="space-y-5">

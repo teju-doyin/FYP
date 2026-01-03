@@ -21,7 +21,7 @@ function Feedback() {
             </div>
             <p className='text-grey-700 font-light text-[15px] mb-4 text-justify'> Lorem ipsum dolor sit,  praesentium dolor reiciendis a nisi quidem ad veniam numquam soluta deleniti?</p>
             <div className="tag flex-between">
-                <p className='flex gap-1 items-end bg-[#FFFAE5] p-1 rounded-[3px]'>
+                <div className='flex gap-1 items-end bg-[#FFFAE5] p-1 rounded-[3px]'>
                     <div>
                         <Image
                         src="/icons/warning-tag.png"
@@ -31,7 +31,7 @@ function Feedback() {
                         />
                     </div>
                     <span className='text-[12px] text-yellow '>Needs Correction</span>
-                </p>
+                </div>
                 <span className='underline text-blue-200 text-[10px]'>Read more</span>
             </div>
         </div>

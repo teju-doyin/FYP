@@ -59,7 +59,7 @@ const Comments: React.FC<CommentsProps> = ({
       String(chapterId),
       "feedbackHistory",
       String(feedbackDocId),
-      "comments"
+      "comments",
     );
 
     const q = query(commentsRef, orderBy("createdAt", "asc"));
@@ -92,11 +92,11 @@ const Comments: React.FC<CommentsProps> = ({
         String(chapterId),
         "feedbackHistory",
         String(feedbackDocId),
-        "comments"
+        "comments",
       );
 
       const currentUserName =
-        user.fullName||
+        user.fullName ||
         (user.uid === studentId ? "Student" : "Supervisor");
 
       const commentDoc = await addDoc(commentsRef, {
@@ -109,6 +109,16 @@ const Comments: React.FC<CommentsProps> = ({
         likedBy: [],
       });
 
+      console.log("Comments handleSend context", {
+        userId: user.uid,
+        studentId,
+        supervisorId,
+        chapterId,
+        feedbackDocId,
+        message,
+        commentId: commentDoc.id,
+      });
+
       // 2a) notification for supervisor when student comments
       if (user.uid === studentId && supervisorId) {
         const notificationsRef = collection(db, "notifications");
@@ -119,7 +129,6 @@ const Comments: React.FC<CommentsProps> = ({
           chapterId,
           feedbackDocId,
           commentId: commentDoc.id,
-          // show the student's name as title
           title: currentUserName,
           preview: message.slice(0, 80),
           read: false,
@@ -137,7 +146,6 @@ const Comments: React.FC<CommentsProps> = ({
           chapterId,
           feedbackDocId,
           commentId: commentDoc.id,
-          // show the supervisor's name as title (e.g. "Prof. Adebowale")
           title: currentUserName,
           preview: message.slice(0, 80),
           read: false,
@@ -145,7 +153,6 @@ const Comments: React.FC<CommentsProps> = ({
         });
       }
 
-      // clear input & reply state after successful send
       setInput("");
       setReplyTo(null);
     } catch (e) {
@@ -157,7 +164,7 @@ const Comments: React.FC<CommentsProps> = ({
 
   const topLevel = useMemo(
     () => comments.filter((c) => c.parentId === null),
-    [comments]
+    [comments],
   );
 
   const repliesFor = (id: string) =>
@@ -206,56 +213,61 @@ const Comments: React.FC<CommentsProps> = ({
               {comment.message}
             </p>
 
-
             <div className="mt-4 ml-1 space-y-3">
               {repliesFor(comment.id).map((reply) => (
-                <>
-                  <div key={reply.id} className="flex gap-1 ">
+                <div key={reply.id}>
+                  <div className="flex gap-1 ">
                     <div className="w-[2px] border border-dashed border-grey-50 rounded-sm "></div>
                     <div className="ml-1">
-                        <div className="flex gap-2 items-center mb-1">
-                            <Image
-                                src={`/${
-                                reply.userType === "student" ? "pfp" : "supervisor-pfp"
-                                }.png`}
-                                alt="Profile"
-                                width={30}
-                                height={30}
-                                className="rounded-full"
-                            />
-                            <p className="font-semibold text-blue-500">
-                            {reply.userName}
-                            </p>
-                        </div>
-                        <p className="text-[#272727] font-light">{reply.message}</p>
+                      <div className="flex gap-2 items-center mb-1">
+                        <Image
+                          src={`/${
+                            reply.userType === "student"
+                              ? "pfp"
+                              : "supervisor-pfp"
+                          }.png`}
+                          alt="Profile"
+                          width={30}
+                          height={30}
+                          className="rounded-full"
+                        />
+                        <p className="font-semibold text-blue-500">
+                          {reply.userName}
+                        </p>
+                      </div>
+                      <p className="text-[#272727] font-light">
+                        {reply.message}
+                      </p>
                     </div>
-                </div>
-                <div className="flex-between items-center">
-                <button
-                    type="button"
-                    className="flex gap-1 items-end"
-                    onClick={() => setReplyTo(comment.id)}
-                >
+                  </div>
+                  <div className="flex-between items-center mt-2">
+                    <button
+                      type="button"
+                      className="flex gap-1 items-end"
+                      onClick={() => setReplyTo(comment.id)}
+                    >
+                      <Image
+                        src="/icons/reply.png"
+                        alt="Reply"
+                        width={20}
+                        height={20}
+                      />
+                      <span className="text-[14px] text-[#8991A0]">
+                        Reply
+                      </span>
+                    </button>
                     <Image
-                    src="/icons/reply.png"
-                    alt="Reply"
-                    width={20}
-                    height={20}
+                      src={`/icons/${
+                        comment.likedBy?.includes(user?.uid || "")
+                          ? "like-filled"
+                          : "like"
+                      }.png`}
+                      alt="Like"
+                      width={20}
+                      height={20}
                     />
-                    <span className="text-[14px] text-[#8991A0]">Reply</span>
-                </button>
-                <Image
-                    src={`/icons/${
-                    comment.likedBy?.includes(user?.uid || "")
-                        ? "like-filled"
-                        : "like"
-                    }.png`}
-                    alt="Like"
-                    width={20}
-                    height={20}
-                />
+                  </div>
                 </div>
-                </>
               ))}
             </div>
           </div>

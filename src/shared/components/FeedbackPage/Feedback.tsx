@@ -14,12 +14,12 @@ interface Todo {
 }
 
 interface FeedbackItem {
-  id: string;            // ui id
-  feedbackDocId: string; // index (or doc id if you later move to subcollection)
+  id: string;
+  feedbackDocId: string;
   dateLabel: string;
   chapterId: number;
   chapterName: string;
-  status: 0 | 1 | 2;     // 0: action required, 1: needs correction, 2: approved
+  status: 0 | 1 | 2;
   feedbackTodo: Todo[];
 }
 
@@ -45,24 +45,39 @@ const FeedbackScreen = () => {
   const [supervisorId, setSupervisorId] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     const run = async () => {
-      if (!user?.uid) return;
+      if (!user?.uid) {
+        setItems([]);
+        setSupervisorId(null);
+        setLoading(false);
+        return;
+      }
 
       setLoading(true);
 
-      const docRef = doc(db, "users", user.uid, "students", user.uid);
-      const snap = await getDoc(docRef);
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.data() as any;
+
+      const supId = userData?.assignedSupervisorId || null;
+      setSupervisorId(supId);
+      console.log("assignedSupervisorId =", supId);
+
+      // 2) student subdocument (feedback history lives here)
+      const studentRef = doc(db, "users", user.uid, "students", user.uid);
+      const snap = await getDoc(studentRef);
       const data = snap.data() as any;
 
-      setSupervisorId(data?.assignedSupervisorId || null);
-
-      const chapters = data?.chapters || {};
+      
       const result: FeedbackItem[] = [];
-
-      Object.entries(chapters).forEach(([chKey, chValue]: [string, any]) => {
-        const chNum = Number(chKey);
-        const chTitle = chapterTitles[chNum - 1] ?? `Chapter ${chNum}`;
-        const history: any[] = chValue?.feedbackHistory || [];
+      // feedbackHistory stored with dotted keys, e.g. "chapters.1.feedbackHistory"
+      for (let ch = 1; ch <= 5; ch++) {
+        const chKey = String(ch);
+        const chTitle = chapterTitles[ch - 1] ?? `Chapter ${ch}`;
+        const historyKey = `chapters.${chKey}.feedbackHistory`;
+        const history: any[] = (data as any)?.[historyKey] || [];
 
         history.forEach((f, index) => {
           const ts = f.createdAt as Timestamp | undefined;
@@ -73,7 +88,7 @@ const FeedbackScreen = () => {
             id: `${chKey}-${index}`,
             feedbackDocId: String(index),
             dateLabel,
-            chapterId: chNum,
+            chapterId: ch,
             chapterName: chTitle,
             status: mapStatus(f.status),
             feedbackTodo: [
@@ -84,18 +99,29 @@ const FeedbackScreen = () => {
             ],
           });
         });
-      });
+      }
 
       result.sort((a, b) => (a.dateLabel < b.dateLabel ? 1 : -1));
 
-      setItems(result);
-      setLoading(false);
+      console.log("FeedbackScreen mapped items", result);
+
+      if (!cancelled) {
+        setItems(result);
+        setLoading(false);
+      }
     };
 
     run().catch((e) => {
       console.error(e);
-      setLoading(false);
+      if (!cancelled) {
+        setItems([]);
+        setLoading(false);
+      }
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.uid]);
 
   if (loading) {
@@ -111,6 +137,8 @@ const FeedbackScreen = () => {
           openId,
           userUid: user?.uid,
         });
+
+        const isOpen = openId === feedback.id;
 
         return (
           <div className="mb-4" key={feedback.id}>
@@ -177,12 +205,12 @@ const FeedbackScreen = () => {
                 ))}
               </ul>
 
-              {openId === feedback.id && user?.uid && (
+              {isOpen && user?.uid && (
                 <>
                   <div className="line my-3" />
                   <Comments
                     studentId={user.uid}
-                    supervisorId={supervisorId || ""} // safe default
+                    supervisorId={supervisorId || ""}
                     chapterId={feedback.chapterId}
                     feedbackDocId={feedback.feedbackDocId}
                   />
@@ -193,11 +221,11 @@ const FeedbackScreen = () => {
                 className="underline text-blue-500 text-[12px] text-right block font-semibold cursor-pointer"
                 onClick={() =>
                   setOpenId((prev) =>
-                    prev === feedback.id ? null : feedback.id
+                    prev === feedback.id ? null : feedback.id,
                   )
                 }
               >
-                {openId === feedback.id ? "See less" : "See more"}
+                {isOpen ? "See less" : "See more"}
               </p>
             </div>
           </div>

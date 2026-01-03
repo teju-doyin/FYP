@@ -7,7 +7,10 @@ import Link from 'next/link';
 function SupervisorHomeHeader() {
   const today = formatStringDate()
   const { user } = useAuth();
+  const role = user?.role ?? "Supervisor";
+  const title = user?.title ?? "Supervisor";
   const firstName = user?.firstName ?? "Supervisor";
+  const lastName = user?.lastName ?? "Supervisor";
   return (
     <div className='flex justify-between items-center mt-5 mb-10'>
       <div className='flex gap-3'>
@@ -18,7 +21,7 @@ function SupervisorHomeHeader() {
           height={50}
         />
         <div>
-          <p className='font-semibold text-[16px] text-grey-500'>Welcome {firstName}</p> {/* dynamic user's name  */}
+          <p className='font-semibold text-[16px] text-grey-500'>Welcome {role === "student"? firstName + " "+ lastName : title + " "+ lastName}</p> {/* dynamic user's name  */}
           <p className='font-light text-grey-700'>{today}</p> {/* dynamic date */}
         </div>
       </div>

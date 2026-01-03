@@ -6,12 +6,18 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { useState } from "react";
 import SupervisorNavbar from "./SupervisorNavbar";
 import SelectChapterModal from "./modals/SelectChapterModal";
+import { useParams } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+
 
 function Navbar() {
+  const { user } = useAuth();
+
   const pathname = usePathname();
   const router = useRouter();
   const [showChapterModal, setShowChapterModal] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
+  const studentUid = user?.uid;
 
   const isSupervisorRoute = pathname.startsWith("/supervisor");
   if (isSupervisorRoute) return <SupervisorNavbar />;
@@ -162,6 +168,7 @@ function Navbar() {
         isOpen={showChapterModal}
         onClose={handleChapterCancel}
         onContinue={handleChapterContinue}
+        studentUid={studentUid}
       />
       )}
     </>

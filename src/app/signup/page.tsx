@@ -11,8 +11,15 @@ import {
   createUserWithEmailAndPassword,
   UserCredential,
 } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore"; // [web:289][web:316]
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import {
   Select,
   SelectContent,
@@ -21,7 +28,7 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
 type Role = "student" | "supervisor";
 
@@ -36,36 +43,58 @@ const SignUp = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    projectTitle: "",
+    projectDescription: "",
   });
+
+  type SupervisorOption = {
+    uid: string;
+    fullName: string;
+    email: string | null;
+    title: string;
+  };
+
+  const [supervisors, setSupervisors] = useState<SupervisorOption[]>([]);
+  const [selectedSupervisorId, setSelectedSupervisorId] =
+    useState<string>("");
+
+  const [supervisorTitle, setSupervisorTitle] = useState<string>("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  type SupervisorOption = { uid: string; fullName: string; email: string | null };
-
-  const [supervisors, setSupervisors] = useState<SupervisorOption[]>([]);
-  const [selectedSupervisorId, setSelectedSupervisorId] = useState<string>("");
 
   useEffect(() => {
     const load = async () => {
-      const q = query(collection(db, "users"), where("role", "==", "supervisor"));
+      const q = query(
+        collection(db, "users"),
+        where("role", "==", "supervisor"),
+      );
       const snap = await getDocs(q);
       setSupervisors(
         snap.docs.map((d) => {
           const data = d.data() as any;
-          return { uid: d.id, fullName: data.fullName ?? data.email ?? d.id, email: data.email ?? null };
-        })
+          return {
+            uid: d.id,
+            fullName: data.fullName ?? data.email ?? d.id,
+            email: data.email ?? null,
+            title: data.title ?? null,
+          };
+        }),
       );
     };
     load().catch(console.error);
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setError(null);
 
     const {
@@ -75,6 +104,8 @@ const SignUp = () => {
       email,
       password,
       confirmPassword,
+      projectTitle,
+      projectDescription,
     } = form;
 
     if (password !== confirmPassword) {
@@ -87,13 +118,23 @@ const SignUp = () => {
       return;
     }
 
-    if (role === "student" && !matricNumber.trim()) {
-      setError("Matric number is required for students.");
-      return;
+    if (role === "student") {
+      if (!matricNumber.trim()) {
+        setError("Matric number is required for students.");
+        return;
+      }
+      if (!projectTitle.trim() || !projectDescription.trim()) {
+        setError("Project title and description are required for students.");
+        return;
+      }
+      if (!selectedSupervisorId) {
+        setError("Please select your assigned supervisor.");
+        return;
+      }
     }
 
-    if (role === "student" && !selectedSupervisorId) {
-      setError("Please select your assigned supervisor.");
+    if (role === "supervisor" && !supervisorTitle) {
+      setError("Please select your title.");
       return;
     }
 
@@ -103,8 +144,8 @@ const SignUp = () => {
       const cred: UserCredential = await createUserWithEmailAndPassword(
         auth,
         email,
-        password
-      ); // [web:289]
+        password,
+      );
 
       const uid = cred.user.uid;
       const fullName = `${firstName} ${lastName}`.trim();
@@ -117,22 +158,32 @@ const SignUp = () => {
         fullName,
         email,
         role,
+        // student-only
         matricNumber: role === "student" ? matricNumber : null,
         assignedSupervisorId: role === "student" ? selectedSupervisorId : null,
+        projectTitle: role === "student" ? projectTitle : null,
+        projectDescription: role === "student" ? projectDescription : null,
+        // supervisor-only
+        title: role === "supervisor" ? supervisorTitle : null,
         createdAt: serverTimestamp(),
-      }); // [web:316]
+      });
 
       // 2) Create student progress (ONLY for students)
       if (role === "student") {
-        await setDoc(doc(db, "students", uid), {
+        // IMPORTANT: path matches what Milestones + SelectChapterModal use
+        const studentRef = doc(db, "users", uid, "students", uid);
+
+        await setDoc(studentRef, {
           uid,
-          currentChapter: 1, // start at chapter 1
+          projectTitle,
+          projectDescription,
+          currentChapter: 1,
           chapters: {
-            1: { status: "not_started" },
-            2: { status: "not_started" },
-            3: { status: "not_started" },
-            4: { status: "not_started" },
-            5: { status: "not_started" },
+            1: { status: "not_started", progress: 0 },
+            2: { status: "not_started", progress: 0 },
+            3: { status: "not_started", progress: 0 },
+            4: { status: "not_started", progress: 0 },
+            5: { status: "not_started", progress: 0 },
           },
         });
       }
@@ -148,7 +199,7 @@ const SignUp = () => {
       setError(
         err?.code === "auth/email-already-in-use"
           ? "Email is already in use."
-          : "Failed to create account. Please try again."
+          : "Failed to create account. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -206,6 +257,7 @@ const SignUp = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5 mb-3">
+        {/* first name */}
         <div>
           <p className="text-[#414651] font-medium text-sm mb-2">
             First Name*
@@ -220,6 +272,7 @@ const SignUp = () => {
           />
         </div>
 
+        {/* last name */}
         <div>
           <p className="text-[#414651] font-medium text-sm mb-2">
             Last Name*
@@ -234,22 +287,87 @@ const SignUp = () => {
           />
         </div>
 
-        {role === "student" && (
+        {/* supervisor title */}
+        {role === "supervisor" && (
           <div>
             <p className="text-[#414651] font-medium text-sm mb-2">
-              Matric Number*
+              Title*
             </p>
-            <Input
-              name="matricNumber"
-              type="text"
-              placeholder="232145"
-              className="py4 h-12 placeholder:text-grey-200"
-              value={form.matricNumber}
-              onChange={handleChange}
-            />
+            <Select
+              value={supervisorTitle}
+              onValueChange={setSupervisorTitle}
+            >
+              <SelectTrigger className="w-full py-6 text-[#414651] text-[16px]">
+                <SelectValue placeholder="Select your title" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel className="text-[14px]">Title</SelectLabel>
+                  <SelectItem value="Dr" className="text-[16px]">
+                    Dr
+                  </SelectItem>
+                  <SelectItem value="Prof" className="text-[16px]">
+                    Prof
+                  </SelectItem>
+                  <SelectItem value="Mrs" className="text-[16px]">
+                    Mrs
+                  </SelectItem>
+                  <SelectItem value="Mr" className="text-[16px]">
+                    Mr
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
         )}
 
+        {/* student-only fields */}
+        {role === "student" && (
+          <>
+            <div>
+              <p className="text-[#414651] font-medium text-sm mb-2">
+                Matric Number*
+              </p>
+              <Input
+                name="matricNumber"
+                type="text"
+                placeholder="232145"
+                className="py4 h-12 placeholder:text-grey-200"
+                value={form.matricNumber}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <p className="text-[#414651] font-medium text-sm mb-2">
+                Project Title*
+              </p>
+              <Input
+                name="projectTitle"
+                type="text"
+                placeholder="Design and Implementation of..."
+                className="py4 h-12 placeholder:text-grey-200"
+                value={form.projectTitle}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <p className="text-[#414651] font-medium text-sm mb-2">
+                Project Description*
+              </p>
+              <textarea
+                name="projectDescription"
+                placeholder="Briefly describe your project..."
+                className="w-full h-28 border rounded-md p-3 text-sm placeholder:text-grey-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={form.projectDescription}
+                onChange={handleChange}
+              />
+            </div>
+          </>
+        )}
+
+        {/* email */}
         <div>
           <p className="text-[#414651] font-medium text-sm mb-2">
             Email Address*
@@ -267,31 +385,34 @@ const SignUp = () => {
             onChange={handleChange}
           />
         </div>
+
+        {/* assigned supervisor */}
         {role === "student" && (
           <div>
             <p className="text-[#414651] font-medium text-sm mb-2">
               Assigned Supervisor*
             </p>
-            <Select value={selectedSupervisorId} onValueChange={setSelectedSupervisorId}>
+            <Select
+              value={selectedSupervisorId}
+              onValueChange={setSelectedSupervisorId}
+            >
               <SelectTrigger className="w-full py-6 text-[#414651] text-[16px]">
                 <SelectValue placeholder="Select a supervisor" />
               </SelectTrigger>
 
               <SelectContent>
                 <SelectGroup>
-                  <SelectLabel
-                    className="text-[14px]"
-                  >
+                  <SelectLabel className="text-[14px]">
                     Supervisors
                   </SelectLabel>
 
                   {supervisors.map((s) => (
-                    <SelectItem 
-                      key={s.uid} 
+                    <SelectItem
+                      key={s.uid}
                       value={s.uid}
                       className="text-[16px]"
                     >
-                      {s.fullName || s.email || s.uid}
+                      {`${s.title ? s.title + " " : ""}${s.fullName}`}
                     </SelectItem>
                   ))}
                 </SelectGroup>
@@ -300,6 +421,7 @@ const SignUp = () => {
           </div>
         )}
 
+        {/* password */}
         <div>
           <p className="text-[#414651] font-medium text-sm mb-2">
             Password*
@@ -314,6 +436,7 @@ const SignUp = () => {
           />
         </div>
 
+        {/* confirm password */}
         <div>
           <p className="text-[#414651] font-medium text-sm mb-2">
             Confirm Password*
@@ -328,9 +451,7 @@ const SignUp = () => {
           />
         </div>
 
-        {error && (
-          <p className="text-sm text-red-500">{error}</p>
-        )}
+        {error && <p className="text-sm text-red-500">{error}</p>}
 
         <Button
           type="submit"
@@ -342,7 +463,7 @@ const SignUp = () => {
         </Button>
       </form>
 
-      <p>
+      <p className="text-center mb-12">
         Already have an account? Login
         <Link
           href="/login"

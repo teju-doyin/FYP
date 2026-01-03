@@ -14,7 +14,7 @@ type UploadState = "idle" | "selected" | "uploading";
 
 const SelectFile = () => {
   const { user } = useAuth();
-  const { currentChapter, loading: chapterLoading } = useCurrentChapter(user?.uid);
+  const { currentChapterNumber, loading: chapterLoading } = useCurrentChapter(user?.uid);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const xhrRef = useRef<XMLHttpRequest | null>(null);
@@ -74,7 +74,7 @@ const SelectFile = () => {
       setError("Chapter info is still loading. Try again.");
       return;
     }
-    if (!currentChapter) {
+    if (!currentChapterNumber) {
       setError("Current chapter is missing. Refresh and try again.");
       return;
     }
@@ -93,7 +93,7 @@ const SelectFile = () => {
       }
 
       const form = new FormData();
-      form.append("chapter", String(currentChapter));
+      form.append("chapter", String(currentChapterNumber));
       form.append("file", file);
 
       const xhr = new XMLHttpRequest();
@@ -277,7 +277,7 @@ const SelectFile = () => {
               >
                 {chapterLoading
                   ? "Loading chapter..."
-                  : `Submit Chapter ${currentChapter}`}
+                  : `Submit Chapter ${currentChapterNumber}`}
               </Button>
             )}
           </div>
