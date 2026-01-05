@@ -5,7 +5,7 @@ function Tasks() {
   return (
     <div className='mb-8'>
         <div className=" flex-between">
-            <h4 className='text-grey-300 '>Tasks <span className='bg-blue-50 text-blue-500 font-semibold p-1 rounded-full text-center ml-2'>10</span></h4>
+            <h4 className='text-grey-300 '>Tasks <span className='bg-blue-50 text-blue-500 font-semibold p-1 rounded-full text-center ml-2'>0</span></h4>
             <Image
                 src="/icons/collapse.png"
                 alt='Profile'

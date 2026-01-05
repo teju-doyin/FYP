@@ -23,13 +23,14 @@ const nunito = Nunito({
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const hasCriticalError = useErrorStore((state) => state.hasCriticalError);
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const pathname = usePathname();
 
   const hideNavbarOn = ["/login", "/signup", "/notifications", "/supervisor/notifications"];
   const shouldHideNavbar = hideNavbarOn.includes(pathname);
   const hideOnDocumentView =
   pathname.startsWith("/supervisor/submissions/documentView");
+  const showNavbar = user && !shouldHideNavbar && !hideOnDocumentView;
 
   return (
     <QueryProvider>
@@ -46,7 +47,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
             <main>{children}</main>
 
             {/* show navbar only when logged in */}
-            {!loading && user && !shouldHideNavbar && !hideOnDocumentView && <Navbar />}
+            {showNavbar && <Navbar />}
           </div>
         )}
       </ToastProvider>

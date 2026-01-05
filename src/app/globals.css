@@ -1,3 +1,7 @@
+/* stylelint-disable at-rule-no-unknown */
+/* or for VS Code’s built-in validator: */
+/* :root { }  */ /* no direct per-file toggle, so global setting is easier */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 

@@ -21,7 +21,7 @@ function DeleteTask() {
                     />
                 </div>
                 <div>
-                    <h3 className='text-xl font-light text-[#181D27] mb-1'>Delete <span className='font-semibold'>"Fix ER diagram"</span></h3>
+                    <h3 className='text-xl font-light text-[#181D27] mb-1'>Delete <span className='font-semibold'>&quot;Fix ER diagram&quot;</span></h3>
                     <p className='text-[#535862] mb-4'>Are you sure you want to delete this task? This action cannot be undone.</p>
                 </div>
             </div>

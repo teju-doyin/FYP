@@ -27,7 +27,7 @@ function TaskTagChange() {
                     />
                 </div>
                 <div>
-                    <h3 className='text-xl font-light text-[#181D27] mb-4'>Change the tag on <span className='font-semibold'>"Fix ER diagram"</span></h3>
+                    <h3 className='text-xl font-light text-[#181D27] mb-4'>Change the tag on <span className='font-semibold'>&quot;Fix ER diagram&quot;</span></h3>
                     <RadioGroup
                         defaultValue='not-started'
                         className='flex flex-col gap-4'

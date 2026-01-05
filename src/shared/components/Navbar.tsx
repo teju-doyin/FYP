@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { useState } from "react";
 import SupervisorNavbar from "./SupervisorNavbar";
 import SelectChapterModal from "./modals/SelectChapterModal";
-import { useParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 

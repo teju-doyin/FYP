@@ -19,7 +19,7 @@ function Feedback() {
                     <span className='text-[12px]'>12 hours ago</span>
                 </div>
             </div>
-            <p className='text-grey-700 font-light text-[15px] mb-4 text-justify'> Lorem ipsum dolor sit,  praesentium dolor reiciendis a nisi quidem ad veniam numquam soluta deleniti?</p>
+            <p className='text-grey-700 font-light text-[15px] mb-4 text-justify'> Your report text should be justified and also put the diagrams in a separate page.</p>
             <div className="tag flex-between">
                 <div className='flex gap-1 items-end bg-[#FFFAE5] p-1 rounded-[3px]'>
                     <div>

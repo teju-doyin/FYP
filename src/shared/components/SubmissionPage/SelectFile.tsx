@@ -14,7 +14,7 @@ type UploadState = "idle" | "selected" | "uploading";
 
 const SelectFile = () => {
   const { user } = useAuth();
-  const { currentChapterNumber, loading: chapterLoading } = useCurrentChapter(user?.uid);
+  const { currentChapterNumber, loading: chapterLoading } = useCurrentChapter(user ? user.uid : null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const xhrRef = useRef<XMLHttpRequest | null>(null);

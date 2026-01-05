@@ -24,7 +24,6 @@ type SubmissionCard = {
   studentName: string;
   studentAvatarUrl: string;
 
-  // for opening the file later if you want
   bucket?: string;
   objectKey?: string;
 };
