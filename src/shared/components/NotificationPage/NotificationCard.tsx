@@ -118,7 +118,6 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
         />
 
         <div className="flex-1">
-          {/* Title now is the sender name, e.g. "Prof. Adebowale" */}
           <p className="text-sm font-semibold text-gray-900">{item.title}</p>
           <p className="text-[11px] text-gray-400">
             {formattedDate} • {formattedTime}
@@ -140,7 +139,7 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
               {item.type === "comment" && (
                 <>
                   <button
-                    className="mt-2 text-[14px] font-semibold text-blue-500"
+                    className="mt-2 text-[14px] font-semibold text-blue-500 cursor-pointer"
                     onClick={() => setReplyOpen((v) => !v)}
                   >
                     {replyOpen ? "Cancel" : "Reply"}
@@ -157,7 +156,7 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
                       />
                       <div className="mt-2 flex justify-end">
                         <Button
-                          className="px-3 py-1 bg-blue-500 text-white rounded-md"
+                          className="px-3 py-1 bg-blue-500 text-white rounded-md cursor-pointer"
                           onClick={handleReplySend}
                           disabled={!replyText.trim() || sending}
                         >
@@ -173,7 +172,7 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
             <>
               {item.type === "feedback" && (
                 <Button
-                  className="mt-2 px-3 py-1 text-xs bg-blue-500 text-white rounded-md"
+                  className="mt-2 px-3 py-1 text-xs bg-blue-500 text-white rounded-md cursor-pointer"
                   onClick={handleViewFeedback}
                 >
                   View feedback
@@ -182,7 +181,7 @@ const NotificationCard: React.FC<Props> = ({ item }) => {
 
               {item.type === "comment" && (
                 <Button
-                  className="mt-2 px-3 py-1 text-xs bg-blue-500 text-white rounded-md"
+                  className="mt-2 px-3 py-1 text-xs bg-blue-500 text-white rounded-md cursor-pointer"
                   onClick={handleViewFeedback}
                 >
                   View comment

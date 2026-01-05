@@ -10,25 +10,25 @@ const tags: Tag[]=[
     {
         id:0,
         title: "All",
-        count: 6,
+        count: 2,
         active: true
     },
     {
         id:1,
         title: "Pending",
-        count: 3,
+        count: 0,
         active: false
     },
     {
         id:2,
         title: "In Review",
-        count: 1,
+        count: 2,
         active: false
     },
     {
         id:3,
         title: "Done",
-        count: 2,
+        count: 0,
         active: false
     }
 ]

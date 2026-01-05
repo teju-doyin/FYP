@@ -15,6 +15,7 @@ function Page() {
     <div className=''>
       <PageLabel 
         label = "Chapter Submission"
+        backTo="/"
       />
       <div className="w-[95%] mx-auto my-18">
         <ChapterRequirements chapter={currentChapterData} />

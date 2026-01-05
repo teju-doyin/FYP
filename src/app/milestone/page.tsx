@@ -80,21 +80,16 @@ const Milestones = () => {
       status,
       newProgress
     );
-    console.log("updateMilestoneStatusOnBackend args", {
-  userUid: user.uid,
-  chapterId: updated.id,
-  milestoneId: modal.milestoneId,
-  status,
-  newProgress,
-});
-
 
     handleCloseModal();
   };
 
   return (
     <div className="my-18">
-      <PageLabel label="Milestones" />
+      <PageLabel 
+        label="Milestones"
+        backTo="/" 
+      />
 
       <div className="flex gap-2 items-center text-center justify-center mb-5">
         <Image src="/icons/progress.png" alt="Progress" width={30} height={30} />

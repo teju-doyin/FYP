@@ -109,16 +109,6 @@ const Comments: React.FC<CommentsProps> = ({
         likedBy: [],
       });
 
-      console.log("Comments handleSend context", {
-        userId: user.uid,
-        studentId,
-        supervisorId,
-        chapterId,
-        feedbackDocId,
-        message,
-        commentId: commentDoc.id,
-      });
-
       // 2a) notification for supervisor when student comments
       if (user.uid === studentId && supervisorId) {
         const notificationsRef = collection(db, "notifications");

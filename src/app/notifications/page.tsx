@@ -6,6 +6,7 @@ const NotificationPage = () => {
     <div>
       <PageLabel 
         label = "Notifications"
+        backTo="/" 
       />
       <div  className='w-[95%] mx-auto mt-18'>
         <NotificationsMenu/>

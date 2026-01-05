@@ -10,6 +10,7 @@ function Page() {
     <div className=''>
       <PageLabel 
         label = "Document View"
+        backTo="/supervisor/submissions" 
       />
       <div  className='w-[95%] mx-auto  mt-18'>
         <DocumentView/>

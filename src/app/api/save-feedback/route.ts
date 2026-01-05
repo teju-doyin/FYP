@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
 
     const decoded = await getAuth().verifyIdToken(token);
     const supervisorUid = decoded.uid;
-    console.log("save-feedback: supervisorUid =", supervisorUid);
 
     const body = await req.json();
     const {
@@ -40,15 +39,8 @@ export async function POST(req: NextRequest) {
       status?: Status;
     } = body || {};
 
-    console.log("save-feedback body:", body);
 
     if (!studentUid || !chapter || !message || !status) {
-      console.warn("save-feedback: missing required fields", {
-        studentUid,
-        chapter,
-        messagePresent: !!message,
-        status,
-      });
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -110,7 +102,6 @@ export async function POST(req: NextRequest) {
       tx.set(studentRef, baseUpdate, { merge: true });
     });
 
-    console.log("save-feedback: write completed");
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {

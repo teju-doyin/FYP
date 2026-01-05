@@ -8,6 +8,7 @@ function Submissions() {
     <div>
       <PageLabel 
         label = "Submissions"
+        backTo="/supervisor/home"
       />
       <div  className='w-[95%] mx-auto  mt-18'>
         <Filter/>

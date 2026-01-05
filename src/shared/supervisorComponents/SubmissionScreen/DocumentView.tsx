@@ -144,7 +144,6 @@ export default function DocumentView() {
       });
 
       const json = await res.json();
-      console.log("API raw JSON:", JSON.stringify(json, null, 2));
 
       if (!res.ok || json.error) {
         throw new Error(json.error || "Failed to load document");

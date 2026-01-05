@@ -131,8 +131,6 @@ const SelectFile = () => {
           // ignore
         }
 
-        console.log("submit-chapter response:", xhr.status, payload);
-
         if (xhr.status >= 200 && xhr.status < 300) {
           setFile(null);
           setUploadState("idle");

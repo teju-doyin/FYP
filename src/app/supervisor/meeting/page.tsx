@@ -12,6 +12,7 @@ function page() {
             <div>
                 <PageLabel 
                     label = "Meeting"
+                    backTo="/supervisor/home"
                 />
                 <div className="w-[95%] mx-auto  mt-18">
                     <Filter/>

@@ -13,6 +13,7 @@ import {
   where,
   Timestamp,
 } from "firebase/firestore";
+import Loading from "@/shared/components/Loading";
 
 type SubmissionCard = {
   id: string; // `${studentUid}:ch${chapter}`
@@ -141,12 +142,16 @@ export default function Submission() {
       : "Review";
   };
 
-  if (loading) return <p className="text-grey-200">Loading...</p>;
+  if (loading) return (
+    <Loading message="Loading..."/>
+  );
   if (!loading && cards.length === 0) {
   return (
-    <p className="text-grey-300 text-sm">
-      No chapter submissions waiting for your review yet.
-    </p>
+    <div className="min-h-screen flex items-center justify-center">
+      <p className="text-center text-grey-600 text-sm md:text-base px-4">
+        No chapter submissions waiting for your review yet.
+      </p>
+  </div>
   );
 }
 
@@ -180,7 +185,7 @@ export default function Submission() {
             </div>
 
             <button type="button" onClick={() => handleOpen(submission)} className="flex gap-2 items-center">
-              <p className="text-blue-500">{labelFor(submission)}</p>
+              <p className="text-blue-500 cursor-pointer">{labelFor(submission)}</p>
               <Image src="/icons/arrow-right.png" alt="arrow-right" width={10} height={10} />
             </button>
           </div>

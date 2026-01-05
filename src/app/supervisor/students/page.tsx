@@ -6,6 +6,7 @@ const Students = () => {
     <div>
       <PageLabel 
         label = "Students"
+        backTo="/supervisor/home" 
       />
       <div  className='w-[95%] mx-auto mt-18'>
         <StudentCard/>

@@ -7,6 +7,7 @@ function page() {
     <div>
       <PageLabel
         label = "Feedback"
+        backTo="/"
         />
         <div className="w-[95%] mx-auto mt-18 mb-30">
           <Feedback/>

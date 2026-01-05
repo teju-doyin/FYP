@@ -58,7 +58,9 @@ const ScheduleMeeting = () => {
 
   return (
     <div>
-      <PageLabel label="Schedule Meeting" />
+      <PageLabel 
+        label="Schedule Meeting"
+        backTo="/supervisor/home" />
 
       <form action="" className="space-y-6 w-[95%] mx-auto  mt-18">
         <div>

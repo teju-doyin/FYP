@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, Timestamp } from "firebase/firestore";
 import { formatFeedbackDate } from "@/lib/utils";
 import Comments from "./Comments";
+import Loading from "../Loading";
 
 interface Todo {
   id: number;
@@ -63,7 +64,6 @@ const FeedbackScreen = () => {
 
       const supId = userData?.assignedSupervisorId || null;
       setSupervisorId(supId);
-      console.log("assignedSupervisorId =", supId);
 
       // 2) student subdocument (feedback history lives here)
       const studentRef = doc(db, "users", user.uid, "students", user.uid);
@@ -103,8 +103,6 @@ const FeedbackScreen = () => {
 
       result.sort((a, b) => (a.dateLabel < b.dateLabel ? 1 : -1));
 
-      console.log("FeedbackScreen mapped items", result);
-
       if (!cancelled) {
         setItems(result);
         setLoading(false);
@@ -125,19 +123,14 @@ const FeedbackScreen = () => {
   }, [user?.uid]);
 
   if (loading) {
-    return <p className="text-grey-400 text-sm">Loading feedback...</p>;
+    return (
+      <Loading message="Loading feedback..."/>
+    )
   }
 
   return (
     <div className="w-[95%] mx-auto">
       {items.map((feedback) => {
-        console.log("feedback render", {
-          feedbackId: feedback.id,
-          supervisorId,
-          openId,
-          userUid: user?.uid,
-        });
-
         const isOpen = openId === feedback.id;
 
         return (

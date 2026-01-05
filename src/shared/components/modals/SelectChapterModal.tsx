@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import React, { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
+import Loading from "../Loading";
 
 interface ChapterModalProps {
   isOpen: boolean;
@@ -54,7 +55,6 @@ const SelectChapterModal: React.FC<ChapterModalProps> = ({
     useState<number | null>(null); // 1-based from Firestore
 
   useEffect(() => {
-    console.log("SelectChapterModal useEffect", { isOpen, studentUid });
 
     if (!isOpen || !studentUid) {
       setLoading(false);
@@ -64,16 +64,11 @@ const SelectChapterModal: React.FC<ChapterModalProps> = ({
     setLoading(true);
 
     const ref = doc(db, "users", studentUid, "students", studentUid);
-    console.log("Listening to doc path:", ref.path);
 
     const unsub = onSnapshot(
       ref,
       (snap) => {
-        console.log("onSnapshot success, exists:", snap.exists());
         const data = snap.data() as any;
-        console.log("raw doc:", data);
-        console.log("raw chapters:", data?.chapters);
-
         if (!data || !data.chapters) {
   // Default state for brand-new student
         const defaultChapters: Chapter[] = chapterTitles.map((title, index) => ({
@@ -121,16 +116,6 @@ const SelectChapterModal: React.FC<ChapterModalProps> = ({
               ? flatProgress ?? 100
               : nestedProgress;
 
-          console.log("chapterData for key", key, {
-            chapterData,
-            flatStatus,
-            flatProgress,
-            nestedStatus,
-            nestedProgress,
-            rawStatus,
-            progress,
-          });
-
           const ui = toUiStatus(rawStatus);
 
           let statusLabel = ui.label;
@@ -148,8 +133,6 @@ const SelectChapterModal: React.FC<ChapterModalProps> = ({
             }
           }
 
-          console.log("final chapter", key, { ui, progress, statusLabel });
-
           return {
             id: index,
             title,
@@ -159,8 +142,6 @@ const SelectChapterModal: React.FC<ChapterModalProps> = ({
             isComplete,
           };
         });
-
-        console.log("mapped chapters:", next);
 
         setChapters(next);
         setLoading(false);
@@ -185,7 +166,6 @@ const SelectChapterModal: React.FC<ChapterModalProps> = ({
     );
 
     return () => {
-      console.log("Unsubscribing from chapters listener");
       unsub();
     };
   }, [isOpen, studentUid]);
@@ -206,13 +186,7 @@ const SelectChapterModal: React.FC<ChapterModalProps> = ({
 
   if (loading) {
     return (
-      <div className="modal-background modal-open">
-        <div className="modal-box">
-          <div className="w-[90%] mx-auto pt-5 flex items-center justify-center h-48">
-            <p className="text-gray-500">Loading chapters...</p>
-          </div>
-        </div>
-      </div>
+      <Loading message="Loading chapters..."/>
     );
   }
 

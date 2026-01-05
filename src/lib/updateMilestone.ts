@@ -19,15 +19,6 @@ export async function updateMilestoneStatusOnBackend(
       ? "complete"
       : "in_progress";
 
-  console.log("updateMilestoneStatusOnBackend write", {
-    path: ref.path,
-    chapterId,
-    milestoneId,
-    status,
-    progress,
-    chapterStatus,
-  });
-
   await updateDoc(ref, {
     [`chapters.${chapterId}.milestones.${milestoneId}.status`]: status,
     [`chapters.${chapterId}.progress`]: progress,

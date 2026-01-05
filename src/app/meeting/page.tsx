@@ -7,8 +7,9 @@ function page() {
     <div>
       <PageLabel 
         label = "Meeting"
+        backTo="/" 
       />
-      <div className="w-[95%] mx-auto">
+      <div className="w-[95%] mx-auto my-18">
         <MeetingTab/>
         <History/>
       </div>

@@ -8,8 +8,9 @@ function page() {
   return (
     <div>
       <PageLabel
-      label='Tasks'/>
-      <div className="w-[95%] mx-auto">
+      label='Tasks'
+      backTo='/'/>
+      <div className="w-[95%] mx-auto my-18">
         <Filter/>
         <Task/>
       </div>

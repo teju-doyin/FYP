@@ -7,14 +7,50 @@ import Tasks from "@/shared/components/HomePage/Tasks"
 import { useAuth } from "@/context/AuthContext";
 import { useCurrentChapter } from "@/lib/getCurrentChapter";
 import ProtectedRoute from "@/shared/components/ProtectedRoute";
+import { useRouter } from "next/navigation";
+import Loading from "@/shared/components/Loading"
+
+
+const CenteredMessage = ({ children }: { children: React.ReactNode }) => (
+  <div className="min-h-screen flex items-center justify-center">
+    <p className="text-center text-grey-600 text-sm md:text-base px-4">
+      {children}
+    </p>
+  </div>
+);
 
 const Home = () => {
-  const { user } = useAuth(); // assumes user?.uid
+  const { user, loading:authLoading  } = useAuth();
   const { currentChapterNumber, currentChapterData, loading } =
   useCurrentChapter(user?.uid ?? null);
-  
-  if (loading) return <p>Loading...</p>;
-  if (!currentChapterData) return <p>No chapter data yet.</p>;
+  const router = useRouter();
+
+  if (authLoading) {
+    return (
+      <CenteredMessage>
+        <Loading message="Please wait"/>
+      </CenteredMessage>
+    );
+  }
+  if (!user) {
+    router.push("/login");
+    return (
+      <CenteredMessage>
+        <Loading message="Redirecting to login..." />
+      </CenteredMessage>
+    );
+  }
+  if (loading) return (
+    <CenteredMessage>
+      <Loading message="Loading"/>
+    </CenteredMessage>
+  );
+  if (!currentChapterData) 
+    return (
+    <CenteredMessage>
+      <Loading message="No chapter data yet."/>
+    </CenteredMessage>
+  );
   
   return (
     <ProtectedRoute allowedRole="student">
